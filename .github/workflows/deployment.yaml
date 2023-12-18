@@ -1,7 +1,7 @@
 name: "Continuous Deploy"
 on: 
     workflow_run:
-        workflows: ["Push"]
+        workflows: ["Pull-request"]
         types: 
             - completed
 jobs: 
