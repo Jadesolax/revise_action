@@ -1,0 +1,76 @@
+name: Pull-request
+on:
+  push:
+    branches-ignore:
+      - master
+  
+jobs:
+  auto-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: preparation
+        run: echo "Preparing to deploy ..."
+    
+      - name: checks out the repository
+        uses: actions/checkout@v4
+
+      - name: "create pull request"
+        uses: peter-evans/create-pull-request@v5
+
+
+      - name: Send mail
+        uses: dawidd6/action-send-mail@v3
+        with:
+          # Specify connection via URL (replaces server_address, server_port, secure,
+          # username and password)
+          #
+          # Format:
+          #
+          #  * smtp://user:password@server:port
+          #  * smtp+starttls://user:password@server:port
+          # Required mail server address if not connection_url:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+
+          username: ${{secrets.MAIL_USERNAME}}
+          # Optional (recommended) mail server password:
+          password: ${{secrets.MAIL_PASSWORD}}
+          # Required mail subject:
+          subject: Github Actions job result
+          # Required recipients' addresses:
+          to: ${{secrets.MAIL_USERNAME}}
+          # Required sender full name (address can be skipped):
+          from: ${{secrets.MAIL_USERNAME}}
+          # Optional plain body:
+          body: Build job of ${{github.repository}} completed successfully!
+          
+      - name: Post to a slack channel
+        uses: slackapi/slack-github-action@v1.24.0
+        id: slack
+        with: 
+            channel-id: "U067LT2GJ7Q"
+            slack-message: "GitHub build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+        env:
+            SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+            
+
+      - name: "Logs into docker"
+        uses: docker/login-action@v3
+        with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: "Build our code"
+        env:
+          IMAGE_NAME: actions_mail_pull_merge
+          VERSION: latest
+          USERNAME: jadesolax
+        run: |
+            docker build -t $USERNAME/$IMAGE_NAME:$VERSION .
+            docker push $USERNAME/$IMAGE_NAME:$VERSION
+
+        
+
+          
+
+    

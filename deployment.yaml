@@ -1,0 +1,19 @@
+name: "Continuous Deploy"
+on: 
+    workflow_run:
+        workflows: ["Pull-request"]
+        types: 
+            - completed
+jobs: 
+    pull_and_run_code:
+        runs-on: self-hosted
+        steps:
+            - name: "Remove container actions_mail_pull_merge"
+              run: "sudo docker rm -f actions_mail_pull_merge || true"
+
+            - name: "Get the code from Docker Hub"
+              run: "sudo docker pull jadesolax/actions_mail_pull_merge:latest"
+
+            - name: "Run the image as a container"
+              run: "sudo docker run -d -p 80:80 --name actions_mail_pull_merge jadesolax/actions_mail_pull_merge:latest"
+             
