@@ -1,4 +1,4 @@
-name: Pull-request
+name: Push
 on:
   push:
     branches-ignore:
@@ -14,8 +14,8 @@ jobs:
       - name: checks out the repository
         uses: actions/checkout@v4
 
-      - name: "create pull request"
-        uses: peter-evans/create-pull-request@v5
+      # - name: "create pull request"
+      #   uses: peter-evans/create-pull-request@v5
 
 
       - name: Send mail
@@ -62,7 +62,7 @@ jobs:
             password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: "Build our code"
         env:
-          IMAGE_NAME: actions_mail_pull_merge
+          IMAGE_NAME: revise_action
           VERSION: latest
           USERNAME: jadesolax
         run: |

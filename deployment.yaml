@@ -1,19 +1,58 @@
 name: "Continuous Deploy"
 on: 
     workflow_run:
-        workflows: ["Pull-request"]
+        workflows: ["Push"]
         types: 
             - completed
 jobs: 
     pull_and_run_code:
         runs-on: self-hosted
         steps:
-            - name: "Remove container actions_mail_pull_merge"
-              run: "sudo docker rm -f actions_mail_pull_merge || true"
+            
+            - name: "create pull request"
+              uses: peter-evans/create-pull-request@v5
+
+            - name: "Remove container revise_action"
+              run: "sudo docker rm -f revise_action || true"
 
             - name: "Get the code from Docker Hub"
-              run: "sudo docker pull jadesolax/actions_mail_pull_merge:latest"
+              run: "sudo docker pull jadesolax/revise_action:latest"
 
             - name: "Run the image as a container"
-              run: "sudo docker run -d -p 80:80 --name actions_mail_pull_merge jadesolax/actions_mail_pull_merge:latest"
-             
+              run: "sudo docker run -d -p 80:80 --name revise_action jadesolax/revise_action:latest"
+            
+            - name: Send mail
+              uses: dawidd6/action-send-mail@v3
+              with:
+          # Specify connection via URL (replaces server_address, server_port, secure,
+          # username and password)
+          #
+          # Format:
+          #
+          #  * smtp://user:password@server:port
+          #  * smtp+starttls://user:password@server:port
+          # Required mail server address if not connection_url:
+              server_address: smtp.gmail.com
+              server_port: 465
+              secure: true
+
+              username: ${{secrets.MAIL_USERNAME}}
+          # Optional (recommended) mail server password:
+              password: ${{secrets.MAIL_PASSWORD}}
+          # Required mail subject:
+              subject: Github Actions job result
+          # Required recipients' addresses:
+              to: ${{secrets.MAIL_USERNAME}}
+          # Required sender full name (address can be skipped):
+              from: ${{secrets.MAIL_USERNAME}}
+          # Optional plain body:
+              body: Build job of ${{github.repository}} completed successfully!
+          
+            - name: Post to a slack channel
+              uses: slackapi/slack-github-action@v1.24.0
+              id: slack
+              with: 
+              channel-id: "U067LT2GJ7Q"
+              slack-message: "GitHub build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+              env:
+                SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
