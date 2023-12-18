@@ -18,7 +18,7 @@ jobs:
             - name: "Get the code from Docker Hub"
               run: "sudo docker pull jadesolax/revise_action:latest"
 
-            - name: "Run the image as a container"
+            - name: "Run thee image as a container"
               run: "sudo docker run -d -p 80:80 --name revise_action jadesolax/revise_action:latest"
             
             - name: Send mail
